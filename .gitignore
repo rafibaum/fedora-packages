@@ -1,0 +1,18 @@
+# Upstream sources
+*.crate
+*.tar.gz
+*.tar.xz
+*.zip
+
+# Built packages
+*.rpm
+
+# mock / fedpkg build output
+results_*/
+
+# Local rpmbuild trees
+BUILD/
+BUILDROOT/
+RPMS/
+SRPMS/
+SOURCES/
