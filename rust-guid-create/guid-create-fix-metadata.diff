@@ -1,5 +1,5 @@
 --- guid-create-0.5.2/Cargo.toml	1970-01-01T00:00:01+00:00
-+++ guid-create-0.5.2/Cargo.toml	2026-11-22T19:58:28.670705+00:00
++++ guid-create-0.5.2/Cargo.toml	2026-11-22T20:08:46.451914+00:00
 @@ -44,11 +44,6 @@
  name = "guid_create"
  path = "src/lib.rs"

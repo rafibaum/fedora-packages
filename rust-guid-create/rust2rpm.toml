@@ -2,5 +2,5 @@
 cargo-toml-patch-comments = [
     "drop the benchmark target and its divan dev-dependency (divan is not packaged)",
 ]
-# Upstream's release helper, not needed in the package.
-exclude-crate-files = ["pass_build_push.sh"]
+# Upstream releasing scripts and benchmark-only code that's not needed to build the package.
+exclude-crate-files = ["pass_build_push.sh", "renovate.json", "benches/"]

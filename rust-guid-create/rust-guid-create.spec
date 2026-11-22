@@ -40,6 +40,8 @@ use the "%{crate}" crate.
 %doc %{crate_instdir}/README.md
 %{crate_instdir}/
 %exclude %{crate_instdir}/pass_build_push.sh
+%exclude %{crate_instdir}/renovate.json
+%exclude %{crate_instdir}/benches/
 
 %package     -n %{name}+default-devel
 Summary:        %{summary}
