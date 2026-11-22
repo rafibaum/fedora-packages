@@ -1,0 +1,8 @@
+--- guid-create-0.5.2/Cargo.toml	1970-01-01T00:00:01+00:00
++++ guid-create-0.5.2/Cargo.toml	2026-11-22T19:58:28.652476+00:00
+@@ -71,5 +71,3 @@
+ [dev-dependencies.quickcheck_macros]
+ version = "1"
+ 
+-[target."cfg(windows)".dependencies.winapi]
+-version = "0.3.9"

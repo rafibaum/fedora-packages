@@ -1,0 +1,24 @@
+--- guid-create-0.5.2/Cargo.toml	1970-01-01T00:00:01+00:00
++++ guid-create-0.5.2/Cargo.toml	2026-11-22T19:58:28.670705+00:00
+@@ -44,11 +44,6 @@
+ name = "guid_create"
+ path = "src/lib.rs"
+ 
+-[[bench]]
+-name = "bench"
+-path = "benches/bench.rs"
+-harness = false
+-
+ [dependencies.bytemuck]
+ version = "1"
+ features = ["derive"]
+@@ -62,9 +57,6 @@
+ version = "1"
+ optional = true
+ 
+-[dev-dependencies.divan]
+-version = "0.1.21"
+-
+ [dev-dependencies.quickcheck]
+ version = "1"
+ 
