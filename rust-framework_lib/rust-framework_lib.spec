@@ -6,9 +6,11 @@
 
 Name:           rust-framework_lib
 Version:        0.6.7
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Library to control Framework Computer systems
 
+# src/chromium_ec/portio_hwio.rs: MIT
+# Everything else: BSD-3-Clause
 License:        BSD-3-Clause AND MIT
 URL:            https://crates.io/crates/framework_lib
 Source:         %{crates_source}
@@ -122,5 +124,8 @@ use the "rusb" feature of the "%{crate}" crate.
 %endif
 
 %changelog
+* Mon Nov 23 2026 Rafi Goldhammer-Baum <rafi@ukbaums.com> - 0.6.7-2
+- Clarified licensing breakdown in the spec
+
 * Mon Nov 23 2026 Rafi Goldhammer-Baum <rafi@ukbaums.com> - 0.6.7-1
 - Initial package
