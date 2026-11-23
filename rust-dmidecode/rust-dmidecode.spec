@@ -5,7 +5,7 @@
 %global crate dmidecode
 
 Name:           rust-dmidecode
-Version:        1.0.1
+Version:        1.0.2
 Release:        1%{?dist}
 Summary:        Decode SMBIOS/DMI information into accessible data structures
 
@@ -73,15 +73,13 @@ use the "std" feature of the "%{crate}" crate.
 
 %if %{with check}
 %check
-# bitfield::tests::from_iterator_shift_overflow expects an integer overflow
-# panic, which only happens when overflow checks are on. The rpm profile used
-# by %%cargo_test uses a release-build profile without these checks enabled, so
-# the test fails.
-# Remove once fixed upstream: https://github.com/jcreekmore/dmidecode/issues/57
-export CARGO_PROFILE_RPM_OVERFLOW_CHECKS=true
 %cargo_test
 %endif
 
 %changelog
+* Mon Nov 23 2026 Rafi Goldhammer-Baum <rafi@ukbaums.com> - 1.0.2-1
+- Updated to upstream 1.0.2
+- Drop overflow-checks workaround for %check (fixed upstream)
+
 * Sun Nov 22 2026 Rafi Goldhammer-Baum <rafi@ukbaums.com> - 1.0.1-1
 - Initial package
