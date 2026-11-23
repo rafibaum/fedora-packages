@@ -1,0 +1,19 @@
+[package]
+cargo-toml-patch-comments = [
+    "drop the Windows-only build script and build dependencies",
+    "drop the nvidia and smartmontools features (not available in framework_lib)",
+]
+extra-files = [
+    "%{_mandir}/man1/framework_tool.1*",
+    "%{bash_completions_dir}/framework_tool",
+    "%{zsh_completions_dir}/_framework_tool",
+    "%{fish_completions_dir}/framework_tool.fish",
+]
+
+[scripts.install]
+post = [
+    "install -Dpm 0644 framework_tool.1 -t %{buildroot}%{_mandir}/man1",
+    "install -Dpm 0644 completions/bash/framework_tool -t %{buildroot}%{bash_completions_dir}",
+    "install -Dpm 0644 completions/zsh/_framework_tool -t %{buildroot}%{zsh_completions_dir}",
+    "install -Dpm 0644 completions/fish/framework_tool.fish -t %{buildroot}%{fish_completions_dir}",
+]
