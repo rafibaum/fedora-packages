@@ -1,0 +1,63 @@
+From 63f7688bb2c56a560a6dad4ad740371641e2115c Mon Sep 17 00:00:00 2001
+From: Rafi Goldhammer-Baum <rafi@ukbaums.com>
+Date: Mon, 23 Nov 2026 21:06:38 +0000
+Subject: [PATCH] Distribute MIT license for portio_hwio.rs
+
+I'm working on packaging framework_tool for Fedora. I noticed that the
+code in portio_hwio.rs is copied from another crate that is MIT-licensed
+and the license isn't redistributed in this crate in the way that's
+expected for MIT-licensed code and it got picked up by Fedora's review
+tooling.
+
+Fixing that is straightforward:
+- Add the license metadata to the file
+- Distribute the license in the crate itself
+- Add Cargo.toml metadata that indicates some of the code is
+  MIT-licensed
+---
+ LICENSES/MIT.txt               | 21 +++++++++++++++++++++
+ src/chromium_ec/portio_hwio.rs |  1 +
+ 2 files changed, 22 insertions(+)
+ create mode 100644 framework_lib/LICENSES/MIT.txt
+
+diff --git a/LICENSES/MIT.txt b/LICENSES/MIT.txt
+new file mode 100644
+index 0000000..2821972
+--- /dev/null
++++ b/LICENSES/MIT.txt
+@@ -0,0 +1,21 @@
++MIT License
++
++Copyright (c) 2019 Jeremy Soller
++
++Permission is hereby granted, free of charge, to any person obtaining a copy
++of this software and associated documentation files (the "Software"), to deal
++in the Software without restriction, including without limitation the rights
++to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++copies of the Software, and to permit persons to whom the Software is
++furnished to do so, subject to the following conditions:
++
++The above copyright notice and this permission notice shall be included in all
++copies or substantial portions of the Software.
++
++THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
++SOFTWARE.
+diff --git a/src/chromium_ec/portio_hwio.rs b/src/chromium_ec/portio_hwio.rs
+index fbf355f..3262113 100644
+--- a/src/chromium_ec/portio_hwio.rs
++++ b/src/chromium_ec/portio_hwio.rs
+@@ -1,5 +1,6 @@
+ // Inlined from https://github.com/FrameworkComputer/rust-hwio (freebsd branch)
+ // Original crate: redox_hwio by Jeremy Soller <jackpot51@gmail.com>
++// SPDX-FileCopyrightText: 2019 Jeremy Soller <jackpot51@gmail.com>
+ // SPDX-License-Identifier: MIT
+ 
+ #[cfg(all(
+-- 
+2.56.1
+

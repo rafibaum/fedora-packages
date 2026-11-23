@@ -1,0 +1,71 @@
+--- framework_lib-0.6.7/Cargo.toml	2006-07-24T01:21:28+00:00
++++ framework_lib-0.6.7/Cargo.toml	2026-11-23T21:44:59.438087+00:00
+@@ -22,7 +22,7 @@
+ autobenches = false
+ description = "Library to control Framework Computer systems"
+ readme = "README.md"
+-license = "BSD-3-Clause"
++license = "BSD-3-Clause AND MIT"
+ repository = "https://github.com/FrameworkComputer/framework-system"
+ 
+ [features]
+@@ -31,14 +31,8 @@
+     "rusb",
+ ]
+ hidapi = ["dep:hidapi"]
+-nvidia = ["dep:nvml-wrapper"]
+ readonly = []
+ rusb = ["dep:rusb"]
+-smartmontools = ["dep:smartmon"]
+-uefi = [
+-    "lazy_static/spin_no_std",
+-    "dep:spin",
+-]
+ 
+ [lib]
+ name = "framework_lib"
+@@ -54,7 +48,6 @@
+ 
+ [dependencies.hidapi]
+ version = "2.6.3"
+-features = ["windows-native"]
+ optional = true
+ 
+ [dependencies.lazy_static]
+@@ -63,10 +56,6 @@
+ [dependencies.log]
+ version = "0.4"
+ default-features = true
+-
+-[dependencies.no-std-compat]
+-version = "0.4.1"
+-features = ["alloc"]
+ 
+ [dependencies.num]
+ version = "0.4"
+@@ -97,14 +86,6 @@
+ version = "0.10.8"
+ features = ["force-soft"]
+ default-features = false
+-
+-[dependencies.smartmon]
+-version = "0.1"
+-optional = true
+-
+-[dependencies.spin]
+-version = "0.12"
+-optional = true
+ 
+ [dependencies.zerocopy]
+ version = "0.8"
+@@ -154,10 +135,6 @@
+     "term",
+ ]
+ 
+-[target."cfg(unix)".dependencies.nvml-wrapper]
+-version = "0.13"
+-optional = true
+-
+ [target."cfg(unix)".dependencies.rand]
+ version = "0.10"
+ features = [

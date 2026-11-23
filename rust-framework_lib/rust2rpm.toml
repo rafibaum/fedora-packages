@@ -1,0 +1,28 @@
+[package]
+cargo-toml-patch-comments = [
+    "drop the no-std-compat dependency",
+    "drop the windows-native feature of hidapi",
+    "drop the smartmontools feature as the smartmon crate is not packaged (Linux falls back to reading NVMe devices directly)",
+    "drop the nvidia feature as the nvml-wrapper crate is not packaged",
+    "drop the uefi feature and its optional spin dependency since it's only used by framework_uefi and needs lazy_static/spin_no_std, which is not packaged",
+    "declare MIT for the code in src/chromium_ec/portio_hwio.rs",
+]
+
+# LICENSES/MIT.txt is added by the patch above, so we have to define it here
+license-files = { include = ["LICENSES/MIT.txt"] }
+
+[[package.extra-patches]]
+number = 10
+file = "framework_lib-remove-no-std-compat.patch"
+comments = [
+    "use core/alloc paths instead of the no-std-compat crate",
+    "submitted upstream: https://github.com/FrameworkComputer/framework-system/pull/404",
+]
+
+[[package.extra-patches]]
+number = 11
+file = "framework_lib-distribute-mit-license.patch"
+comments = [
+    "add the MIT license text for src/chromium_ec/portio_hwio.rs",
+    "submitted upstream: https://github.com/FrameworkComputer/framework-system/pull/405",
+]

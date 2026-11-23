@@ -1,0 +1,508 @@
+From 79aa9867faf4c771bb24278e037d3825b8bbb1dc Mon Sep 17 00:00:00 2001
+From: Rafi Goldhammer-Baum <rafi@ukbaums.com>
+Date: Mon, 23 Nov 2026 19:58:07 +0000
+Subject: [PATCH] Remove no-std-compat from framework_lib
+
+I was working on packaging framework_tool for Fedora, but packaging
+no-std-compat would have been challenging since it has not been updated
+since 2020 and has very old dependencies. It's pretty straightforward to
+remove it instead.
+---
+ src/capsule.rs                     | 14 +++++++-------
+ src/capsule_content.rs             |  4 ++--
+ src/ccgx/device.rs                 |  4 ++--
+ src/ccgx/mod.rs                    |  2 +-
+ src/chromium_ec/command.rs         |  6 +++---
+ src/chromium_ec/i2c_passthrough.rs | 10 +++++-----
+ src/chromium_ec/mod.rs             | 26 +++++++++++++-------------
+ src/chromium_ec/portio.rs          |  8 ++++----
+ src/chromium_ec/portio_mec.rs      |  2 +-
+ src/chromium_ec/protocol.rs        |  4 ++--
+ src/ec_binary.rs                   |  2 +-
+ src/esrt/mod.rs                    |  3 ++-
+ src/lib.rs                         |  2 --
+ src/smbios.rs                      |  3 ++-
+ src/util.rs                        | 17 +++++++++--------
+ 15 files changed, 54 insertions(+), 53 deletions(-)
+
+diff --git a/src/capsule.rs b/src/capsule.rs
+index 6ccfe73..2b59ada 100644
+--- a/src/capsule.rs
++++ b/src/capsule.rs
+@@ -8,8 +8,8 @@
+ //!
+ //! Currently NOT implemented is parsing capsules with mutiple header structs!
+ 
+-use std::prelude::v1::*;
+-
++use alloc::format;
++use alloc::string::ToString;
+ use core::prelude::rust_2021::derive;
+ use guid_create::{CGuid, GUID};
+ #[cfg(not(feature = "uefi"))]
+@@ -43,7 +43,7 @@ impl EfiCapsuleHeader {
+     /// This is very useful to check if the binary data we're parsing is a capsule at all, or not.
+     pub fn is_valid(&self, data: &[u8]) -> bool {
+         let size = data.len() as u32;
+-        let header_size = std::mem::size_of::<EfiCapsuleHeader>() as u32;
++        let header_size = core::mem::size_of::<EfiCapsuleHeader>() as u32;
+         if self.capsule_image_size != size {
+             return false;
+         }
+@@ -136,7 +136,7 @@ pub fn parse_capsule_header(data: &[u8]) -> Option<EfiCapsuleHeader> {
+ }
+ 
+ pub fn print_capsule_header(header: &EfiCapsuleHeader) {
+-    let header_len = std::mem::size_of::<EfiCapsuleHeader>();
++    let header_len = core::mem::size_of::<EfiCapsuleHeader>();
+     println!("Capsule Header");
+     println!("  Capsule GUID: {}", header.capsule_guid);
+     println!("  Header size: {:>19} B", header.header_size);
+@@ -154,7 +154,7 @@ pub fn print_capsule_header(header: &EfiCapsuleHeader) {
+ 
+ pub fn parse_ux_header(data: &[u8]) -> DisplayCapsule {
+     let capsule_header = read_capsule_header(data);
+-    let p = &data[std::mem::size_of::<EfiCapsuleHeader>()..];
++    let p = &data[core::mem::size_of::<EfiCapsuleHeader>()..];
+     DisplayCapsule {
+         capsule_header,
+         image_payload: DisplayPayload {
+@@ -169,7 +169,7 @@ pub fn parse_ux_header(data: &[u8]) -> DisplayCapsule {
+     }
+ }
+ pub fn print_ux_header(header: &DisplayCapsule) {
+-    let header_len = std::mem::size_of::<DisplayCapsule>();
++    let header_len = core::mem::size_of::<DisplayCapsule>();
+     let ux_header = &header.image_payload;
+     println!("Windows UX Header");
+     println!("    Version:    {:>20}", ux_header.version);
+@@ -193,7 +193,7 @@ pub fn print_ux_header(header: &DisplayCapsule) {
+ 
+ /// Extract the image data from the display capsule to a file
+ pub fn dump_winux_image(data: &[u8], header: &DisplayCapsule, filename: &str) {
+-    let header_len = std::mem::size_of::<DisplayCapsule>();
++    let header_len = core::mem::size_of::<DisplayCapsule>();
+     let image_size = header.capsule_header.capsule_image_size as usize - header_len;
+ 
+     let image = &data[header_len..image_size];
+diff --git a/src/capsule_content.rs b/src/capsule_content.rs
+index 81199bd..e993f03 100644
+--- a/src/capsule_content.rs
++++ b/src/capsule_content.rs
+@@ -31,12 +31,12 @@ pub fn find_bios_version(data: &[u8]) -> Option<BiosCapsule> {
+ 
+     // One of: GFW30, HFW3T, HFW30, IFR30, KFM30, JFP30, LFK30, IFGA3, IFGP6, LFR20, LFSP0
+     let platform_offset = found + 0xA + needle.len() - 1;
+-    let platform = std::str::from_utf8(&data[platform_offset..platform_offset + 5])
++    let platform = core::str::from_utf8(&data[platform_offset..platform_offset + 5])
+         .map(|x| x.to_string())
+         .ok()?;
+ 
+     let ver_offset = found + 0x10 + needle.len() - 1;
+-    let version = std::str::from_utf8(&data[ver_offset..ver_offset + 5])
++    let version = core::str::from_utf8(&data[ver_offset..ver_offset + 5])
+         .map(|x| x.to_string())
+         .ok()?;
+ 
+diff --git a/src/ccgx/device.rs b/src/ccgx/device.rs
+index 2771ecf..d821d85 100644
+--- a/src/ccgx/device.rs
++++ b/src/ccgx/device.rs
+@@ -245,7 +245,7 @@ impl PdController {
+ 
+         while data.len() < len.into() {
+             let remaining = len - data.len() as u16;
+-            let chunk_len = std::cmp::min(MAX_I2C_CHUNK, remaining.into());
++            let chunk_len = core::cmp::min(MAX_I2C_CHUNK, remaining.into());
+             let offset = addr + data.len() as u16;
+             let i2c_response = self.i2c_read(offset, chunk_len as u16)?;
+             if let Err(EcError::DeviceError(err)) = i2c_response.is_successful() {
+@@ -277,7 +277,7 @@ impl PdController {
+         let mut data_written = 0;
+ 
+         while data_written < data.len() {
+-            let chunk_len = std::cmp::min(MAX_I2C_CHUNK, data.len());
++            let chunk_len = core::cmp::min(MAX_I2C_CHUNK, data.len());
+             let buffer = &data[data_written..data_written + chunk_len];
+             let offset = addr + data_written as u16;
+ 
+diff --git a/src/ccgx/mod.rs b/src/ccgx/mod.rs
+index 6f4fe67..44d106f 100644
+--- a/src/ccgx/mod.rs
++++ b/src/ccgx/mod.rs
+@@ -5,10 +5,10 @@ use alloc::string::String;
+ use alloc::string::ToString;
+ use alloc::vec;
+ use alloc::vec::Vec;
++use core::fmt;
+ #[cfg(feature = "uefi")]
+ use core::prelude::rust_2021::derive;
+ use num_derive::FromPrimitive;
+-use std::fmt;
+ use zerocopy::byteorder::little_endian::{U16, U32};
+ use zerocopy::{FromBytes, KnownLayout};
+ 
+diff --git a/src/chromium_ec/command.rs b/src/chromium_ec/command.rs
+index d05316b..c75f579 100644
+--- a/src/chromium_ec/command.rs
++++ b/src/chromium_ec/command.rs
+@@ -203,14 +203,14 @@ pub trait EcRequestRaw<R> {
+         Self: Sized,
+     {
+         let response = self.send_command_vec_extra(ec, extra_data)?;
+-        if response.len() != std::mem::size_of::<R>() {
++        if response.len() != core::mem::size_of::<R>() {
+             return Err(EcError::DeviceError(format!(
+                 "Returned data size ({}) is not the expected size: {}",
+                 response.len(),
+-                std::mem::size_of::<R>()
++                core::mem::size_of::<R>()
+             )));
+         }
+-        let val: R = unsafe { std::ptr::read(response.as_ptr() as *const _) };
++        let val: R = unsafe { core::ptr::read(response.as_ptr() as *const _) };
+         Ok(val)
+     }
+ }
+diff --git a/src/chromium_ec/i2c_passthrough.rs b/src/chromium_ec/i2c_passthrough.rs
+index 4728f9f..fa66cec 100644
+--- a/src/chromium_ec/i2c_passthrough.rs
++++ b/src/chromium_ec/i2c_passthrough.rs
+@@ -6,7 +6,7 @@ use alloc::format;
+ use alloc::string::ToString;
+ use alloc::vec;
+ use alloc::vec::Vec;
+-use std::mem::size_of;
++use core::mem::size_of;
+ 
+ /// Maximum transfer size for one I2C transaction supported by the chip
+ pub const MAX_I2C_CHUNK: usize = 128;
+@@ -138,7 +138,7 @@ fn i2c_read_impl(
+     buffer[params_len + msgs_len..].copy_from_slice(addr_bytes);
+ 
+     let data = ec.send_command(EcCommands::I2cPassthrough as u16, 0, &buffer)?;
+-    let res: _EcI2cPassthruResponse = unsafe { std::ptr::read(data.as_ptr() as *const _) };
++    let res: _EcI2cPassthruResponse = unsafe { core::ptr::read(data.as_ptr() as *const _) };
+     // The EC only returns as many bytes as it managed to read.
+     // On NAK or timeout that's less than requested, possibly nothing at all.
+     let res_data = &data[size_of::<_EcI2cPassthruResponse>()..];
+@@ -208,7 +208,7 @@ pub fn i2c_write_block(
+     buffer[params_len + msgs_len + addr_bytes.len()..].copy_from_slice(data);
+ 
+     let data = ec.send_command(EcCommands::I2cPassthrough as u16, 0, &buffer)?;
+-    let res: _EcI2cPassthruResponse = unsafe { std::ptr::read(data.as_ptr() as *const _) };
++    let res: _EcI2cPassthruResponse = unsafe { core::ptr::read(data.as_ptr() as *const _) };
+     assert_eq!(data.len(), size_of::<_EcI2cPassthruResponse>()); // No extra data other than the header
+ 
+     // Only assert message count if the transfer was successful
+@@ -260,7 +260,7 @@ pub fn i2c_write(
+     buffer[params_len + msgs_len + addr_bytes.len()..].copy_from_slice(data);
+ 
+     let data = ec.send_command(EcCommands::I2cPassthrough as u16, 0, &buffer)?;
+-    let res: _EcI2cPassthruResponse = unsafe { std::ptr::read(data.as_ptr() as *const _) };
++    let res: _EcI2cPassthruResponse = unsafe { core::ptr::read(data.as_ptr() as *const _) };
+     assert_eq!(data.len(), size_of::<_EcI2cPassthruResponse>()); // No extra data other than the header
+ 
+     // Only assert message count if the transfer was successful
+@@ -352,7 +352,7 @@ pub fn i2c_transfer(
+             data.len()
+         )));
+     }
+-    let res: _EcI2cPassthruResponse = unsafe { std::ptr::read(data.as_ptr() as *const _) };
++    let res: _EcI2cPassthruResponse = unsafe { core::ptr::read(data.as_ptr() as *const _) };
+     let res_data = &data[header_len..];
+     let i2c_status = res.i2c_status;
+     trace!(
+diff --git a/src/chromium_ec/mod.rs b/src/chromium_ec/mod.rs
+index 53c3da1..632925e 100644
+--- a/src/chromium_ec/mod.rs
++++ b/src/chromium_ec/mod.rs
+@@ -16,7 +16,7 @@ use crate::power;
+ use crate::smbios;
+ use crate::util::{self, Platform};
+ 
+-use no_std_compat::time::Duration;
++use core::time::Duration;
+ 
+ use log::Level;
+ use num_derive::FromPrimitive;
+@@ -345,7 +345,7 @@ impl CrosEc {
+     pub fn version_info(&self) -> EcResult<String> {
+         // Response is null-terminated string.
+         let data = self.send_command(EcCommands::GetBuildInfo as u16, 0, &[])?;
+-        Ok(std::str::from_utf8(&data)
++        Ok(core::str::from_utf8(&data)
+             .map_err(|utf8_err| {
+                 EcError::DeviceError(format!("Failed to decode version: {:?}", utf8_err))
+             })?
+@@ -376,11 +376,11 @@ impl CrosEc {
+         };
+ 
+         Some((
+-            std::str::from_utf8(&v.version_string_ro)
++            core::str::from_utf8(&v.version_string_ro)
+                 .ok()?
+                 .trim_end_matches(char::from(0))
+                 .to_string(),
+-            std::str::from_utf8(&v.version_string_rw)
++            core::str::from_utf8(&v.version_string_rw)
+                 .ok()?
+                 .trim_end_matches(char::from(0))
+                 .to_string(),
+@@ -1091,7 +1091,7 @@ impl CrosEc {
+         for chunk_no in 0..chunks {
+             let offset = chunk_no * chunk_size;
+             // Current chunk might be smaller if it's the last
+-            let cur_chunk_size = std::cmp::min(chunk_size, data.len() - chunk_no * chunk_size);
++            let cur_chunk_size = core::cmp::min(chunk_size, data.len() - chunk_no * chunk_size);
+ 
+             if chunk_no % 100 == 0 {
+                 if chunk_no != 0 {
+@@ -1198,7 +1198,7 @@ impl CrosEc {
+             }
+ 
+             let offset = offset + chunk_no * chunk_size;
+-            let cur_chunk_size = std::cmp::min(chunk_size, size - chunk_no * chunk_size);
++            let cur_chunk_size = core::cmp::min(chunk_size, size - chunk_no * chunk_size);
+             if log_enabled!(Level::Warn) {
+                 if chunk_no % 10 == 0 {
+                     println!();
+@@ -1446,7 +1446,7 @@ impl CrosEc {
+ 
+         while data.len() < len.into() {
+             let remaining = len - data.len() as u16;
+-            let chunk_len = std::cmp::min(i2c_passthrough::MAX_I2C_CHUNK, remaining.into());
++            let chunk_len = core::cmp::min(i2c_passthrough::MAX_I2C_CHUNK, remaining.into());
+             let offset = addr + data.len() as u16;
+             // Use 16-bit addressing for GPU EEPROM (required for larger EEPROMs)
+             let i2c_response = i2c_passthrough::i2c_read_16bit_addr(
+@@ -1525,7 +1525,7 @@ impl CrosEc {
+         for chunk_no in 0..chunks {
+             let offset = chunk_no * chunk_size;
+             // Current chunk might be smaller if it's the last
+-            let cur_chunk_size = std::cmp::min(chunk_size, data.len() - chunk_no * chunk_size);
++            let cur_chunk_size = core::cmp::min(chunk_size, data.len() - chunk_no * chunk_size);
+ 
+             if chunk_no % 100 == 0 {
+                 println!();
+@@ -1601,7 +1601,7 @@ impl CrosEc {
+     pub fn read_gpu_desc_header(&self) -> EcResult<GpuCfgDescriptor> {
+         let bytes =
+             self.read_ec_gpu_chunk(0x00, core::mem::size_of::<GpuCfgDescriptor>() as u16)?;
+-        let header: *const GpuCfgDescriptor = unsafe { std::mem::transmute(bytes.as_ptr()) };
++        let header: *const GpuCfgDescriptor = unsafe { core::mem::transmute(bytes.as_ptr()) };
+         let header = unsafe { *header };
+ 
+         Ok(header)
+@@ -1630,7 +1630,7 @@ impl CrosEc {
+                         continue;
+                     }
+ 
+-                    let utf8 = std::str::from_utf8(&data).unwrap();
++                    let utf8 = core::str::from_utf8(&data).unwrap();
+                     let full_ascii = utf8.replace(|c: char| !c.is_ascii(), "");
+                     let ascii = full_ascii.replace(['\0'], "");
+ 
+@@ -1668,7 +1668,7 @@ impl CrosEc {
+                         return Ok(console);
+                     }
+ 
+-                    let utf8 = std::str::from_utf8(&data).unwrap();
++                    let utf8 = core::str::from_utf8(&data).unwrap();
+                     let ascii = utf8
+                         .replace(|c: char| !c.is_ascii(), "")
+                         .replace(['\0'], "");
+@@ -1758,7 +1758,7 @@ impl CrosEc {
+     /// Get the name of a temperature sensor
+     pub fn get_temp_sensor_name(&self, id: u8) -> EcResult<String> {
+         let res = EcRequestTempSensorGetInfo { id }.send_command(self)?;
+-        Ok(std::str::from_utf8(&res.sensor_name)
++        Ok(core::str::from_utf8(&res.sensor_name)
+             .map_err(|utf8_err| {
+                 EcError::DeviceError(format!("Failed to decode sensor name: {:?}", utf8_err))
+             })?
+@@ -1965,7 +1965,7 @@ impl CrosEc {
+             }
+             .send_command(self)?;
+ 
+-            let name = std::str::from_utf8(&res.name)
++            let name = core::str::from_utf8(&res.name)
+                 .map_err(|utf8_err| {
+                     EcError::DeviceError(format!("Failed to decode GPIO name: {:?}", utf8_err))
+                 })?
+diff --git a/src/chromium_ec/portio.rs b/src/chromium_ec/portio.rs
+index 7efd692..4b6b419 100644
+--- a/src/chromium_ec/portio.rs
++++ b/src/chromium_ec/portio.rs
+@@ -187,9 +187,9 @@ fn checksum_buffer(buffer: &[u8]) -> u8 {
+ 
+ fn pack_request(mut request: EcHostRequest, data: &[u8]) -> Vec<u8> {
+     let total = EC_LPC_HOST_PACKET_SIZE as usize;
+-    let offset = std::mem::size_of::<EcHostRequest>();
++    let offset = core::mem::size_of::<EcHostRequest>();
+     let mut buffer = vec![0_u8; total];
+-    let max_transfer = std::cmp::min(total - offset, data.len());
++    let max_transfer = core::cmp::min(total - offset, data.len());
+     let checksum_size = offset + max_transfer;
+ 
+     if log_enabled!(Level::Trace) {
+@@ -225,7 +225,7 @@ fn unpack_response_header(bytes: &[u8]) -> EcHostResponse {
+     let response: EcHostResponse = unsafe {
+         // TODO: Why does transmute not work?
+         //std::mem::transmute(bytes.as_ptr())
+-        std::ptr::read(bytes.as_ptr() as *const _)
++        core::ptr::read(bytes.as_ptr() as *const _)
+     };
+ 
+     if response.result == 7 {
+@@ -285,7 +285,7 @@ pub fn send_command(command: u16, command_version: u8, data: &[u8]) -> EcResult<
+     let resp_hdr_buffer = transfer_read(
+         EC_LPC_ADDR_HOST_ARGS,
+         0,
+-        std::mem::size_of::<EcHostResponse>() as u16,
++        core::mem::size_of::<EcHostResponse>() as u16,
+     );
+     let resp_header = unpack_response_header(&resp_hdr_buffer);
+     // TODO: I think we're already covered by checking res above
+diff --git a/src/chromium_ec/portio_mec.rs b/src/chromium_ec/portio_mec.rs
+index 64a8bd8..f8c978b 100644
+--- a/src/chromium_ec/portio_mec.rs
++++ b/src/chromium_ec/portio_mec.rs
+@@ -140,7 +140,7 @@ pub fn transfer_read(address: u16, size: u16) -> Vec<u8> {
+         }
+         Pio::<u16>::new(MEC_LPC_ADDRESS_REGISTER0).write((offset & 0xFFFC) | MEC_EC_BYTE_ACCESS);
+ 
+-        for byte in (offset % 4)..std::cmp::min(4, size) {
++        for byte in (offset % 4)..core::cmp::min(4, size) {
+             buffer[usize::from(pos)] = Pio::<u8>::new(MEC_LPC_DATA_REGISTER0 + byte).read();
+             if log_enabled!(Level::Trace) {
+                 trace!("  Received: {:#X}", buffer[usize::from(pos)]);
+diff --git a/src/chromium_ec/protocol.rs b/src/chromium_ec/protocol.rs
+index 11b7c44..d107fb8 100644
+--- a/src/chromium_ec/protocol.rs
++++ b/src/chromium_ec/protocol.rs
+@@ -87,7 +87,7 @@ pub struct EcHostRequest {
+ 
+ /// Max number of request parameter bytes that fit into one host command.
+ pub const EC_MAX_REQUEST_SIZE: usize =
+-    EC_LPC_HOST_PACKET_SIZE as usize - std::mem::size_of::<EcHostRequest>();
++    EC_LPC_HOST_PACKET_SIZE as usize - core::mem::size_of::<EcHostRequest>();
+ 
+ pub const EC_HOST_RESPONSE_VERSION: u8 = 3;
+ 
+@@ -109,6 +109,6 @@ pub struct EcHostResponse {
+     /// Reserved byte in protocol v3. Must be 0
+     pub reserved: u16,
+ }
+-pub const HEADER_LEN: usize = std::mem::size_of::<EcHostResponse>();
++pub const HEADER_LEN: usize = core::mem::size_of::<EcHostResponse>();
+ /// Max number of response data bytes that fit into one host command.
+ pub const EC_MAX_RESPONSE_SIZE: usize = EC_LPC_HOST_PACKET_SIZE as usize - HEADER_LEN;
+diff --git a/src/ec_binary.rs b/src/ec_binary.rs
+index f656f7f..0c2d667 100644
+--- a/src/ec_binary.rs
++++ b/src/ec_binary.rs
+@@ -76,7 +76,7 @@ pub fn print_ec_version(ver: &ImageVersionData, ro: bool) {
+ }
+ 
+ fn parse_ec_version(data: &_ImageVersionData) -> Option<ImageVersionData> {
+-    let version = std::str::from_utf8(&data.version)
++    let version = core::str::from_utf8(&data.version)
+         .ok()?
+         .trim_end_matches(char::from(0));
+     Some(ImageVersionData {
+diff --git a/src/esrt/mod.rs b/src/esrt/mod.rs
+index 49fc052..b106395 100644
+--- a/src/esrt/mod.rs
++++ b/src/esrt/mod.rs
+@@ -10,9 +10,10 @@
+ //!
+ //! Not all firmware components are reported here.
+ 
++use alloc::vec;
++use alloc::vec::Vec;
+ #[allow(unused_imports)]
+ use log::{debug, error, info, trace};
+-use std::prelude::v1::*;
+ 
+ use core::prelude::v1::derive;
+ use guid_create::{CGuid, GUID};
+diff --git a/src/lib.rs b/src/lib.rs
+index e20af6b..f6b7244 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -4,8 +4,6 @@
+ #![allow(clippy::uninlined_format_args)]
+ 
+ extern crate alloc;
+-#[cfg(feature = "uefi")]
+-extern crate no_std_compat as std; // TODO: I don't this should be necessary
+ 
+ #[macro_use]
+ extern crate lazy_static;
+diff --git a/src/smbios.rs b/src/smbios.rs
+index dad72bc..43feff6 100644
+--- a/src/smbios.rs
++++ b/src/smbios.rs
+@@ -1,6 +1,7 @@
+ //! Retrieve SMBIOS tables and extract information from them
+ 
+-use std::prelude::v1::*;
++use alloc::string::{String, ToString};
++use alloc::vec::Vec;
+ 
+ use crate::util::Config;
+ pub use crate::util::{Platform, PlatformFamily};
+diff --git a/src/util.rs b/src/util.rs
+index f102d5c..7e85ffc 100644
+--- a/src/util.rs
++++ b/src/util.rs
+@@ -1,6 +1,7 @@
+ //! Miscellaneous utility functions to use across modules
+ 
+-use std::prelude::v1::*;
++use alloc::format;
++use alloc::string::String;
+ 
+ #[cfg(feature = "uefi")]
+ use core::prelude::rust_2021::derive;
+@@ -12,7 +13,7 @@ use spin::{Mutex, MutexGuard};
+ #[cfg(not(feature = "uefi"))]
+ use std::sync::{Arc, Mutex, MutexGuard};
+ 
+-use no_std_compat::time::Duration;
++use core::time::Duration;
+ 
+ use crate::smbios;
+ 
+@@ -179,21 +180,21 @@ lazy_static! {
+ 
+ /// Convert any type to a u8 slice (Like a C byte buffer)
+ pub unsafe fn any_as_u8_slice<T: Sized>(p: &T) -> &[u8] {
+-    let len = ::std::mem::size_of::<T>();
+-    ::std::slice::from_raw_parts((p as *const T) as *const u8, len)
++    let len = ::core::mem::size_of::<T>();
++    ::core::slice::from_raw_parts((p as *const T) as *const u8, len)
+ }
+ 
+ /// Convert any type to a mut u8 slice (Like a C byte buffer)
+ #[cfg(feature = "rusb")]
+ pub unsafe fn any_as_mut_u8_slice<T: Sized>(p: &mut T) -> &mut [u8] {
+-    let len = ::std::mem::size_of::<T>();
+-    ::std::slice::from_raw_parts_mut((p as *mut T) as *mut u8, len)
++    let len = ::core::mem::size_of::<T>();
++    ::core::slice::from_raw_parts_mut((p as *mut T) as *mut u8, len)
+ }
+ 
+ /// Convert an array/slice of any type to a u8 slice (Like a C byte buffer)
+ pub unsafe fn any_vec_as_u8_slice<T: Sized>(p: &[T]) -> &[u8] {
+-    let len = ::std::mem::size_of_val(p);
+-    ::std::slice::from_raw_parts(p.as_ptr() as *const u8, len)
++    let len = ::core::mem::size_of_val(p);
++    ::core::slice::from_raw_parts(p.as_ptr() as *const u8, len)
+ }
+ 
+ /// Print a byte buffer as a series of hex bytes
+-- 
+2.56.1
+
