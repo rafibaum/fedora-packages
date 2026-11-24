@@ -1,3 +1,6 @@
-# framework-tool Fedora COPR
+# Fedora Packages
 
-This is a WIP COPR for framework-tool. My hope is to eventually get all the packages in this repository reviewed and released into the upstream Fedora repos.
+I maintain a set of packages that I use personally on Fedora. I'm working on getting these upstreamed but in the meantime any others are also welcome to use them.
+
+## framework_tool
+A tool for managing low-level settings on Framework laptops and desktops.
