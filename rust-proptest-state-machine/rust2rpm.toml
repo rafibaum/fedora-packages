@@ -1,0 +1,4 @@
+[package]
+cargo-toml-patch-comments = [
+    "drop the state_machine_echo_server example since Fedora doesn't package the message-io dev dependency it uses",
+]

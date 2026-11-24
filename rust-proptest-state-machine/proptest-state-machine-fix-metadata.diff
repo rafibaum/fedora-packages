@@ -1,0 +1,26 @@
+--- proptest-state-machine-0.8.0/Cargo.toml	1970-01-01T00:00:01+00:00
++++ proptest-state-machine-0.8.0/Cargo.toml	2026-11-24T22:43:12.971650+00:00
+@@ -47,10 +47,6 @@
+ path = "src/lib.rs"
+ 
+ [[example]]
+-name = "state_machine_echo_server"
+-path = "examples/state_machine_echo_server.rs"
+-
+-[[example]]
+ name = "state_machine_heap"
+ path = "examples/state_machine_heap.rs"
+ 
+@@ -62,12 +58,3 @@
+     "bit-set",
+ ]
+ default-features = true
+-
+-[dev-dependencies.message-io]
+-version = "0.19.0"
+-features = [
+-    "tcp",
+-    "udp",
+-    "websocket",
+-]
+-default-features = false

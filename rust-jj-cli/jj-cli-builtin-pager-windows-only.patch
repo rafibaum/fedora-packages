@@ -1,0 +1,116 @@
+diff --git a/src/ui.rs b/src/ui.rs
+index 871799b..0e19341 100644
+--- a/src/ui.rs
++++ b/src/ui.rs
+@@ -28,6 +28,7 @@ use std::mem;
+ use std::process::Child;
+ use std::process::ChildStdin;
+ use std::process::Stdio;
++#[cfg(windows)]
+ use std::thread;
+ use std::thread::JoinHandle;
+ 
+@@ -47,6 +48,15 @@ use crate::formatter::PlainTextFormatter;
+ 
+ const BUILTIN_PAGER_NAME: &str = ":builtin";
+ 
++// The builtin pager is used on Windows in place of `less`, but almost all
++// Linux users will just use `less`. We cfg-gate the type here so that the
++// Linux dependency tree can be trimmed down but the sites where this type is
++// used don't need to be cfg-gated themselves.
++#[cfg(windows)]
++type BuiltinPagerResult = streampager::Result<()>;
++#[cfg(not(windows))]
++type BuiltinPagerResult = Result<(), std::convert::Infallible>;
++
+ enum UiOutput {
+     Terminal {
+         stdout: Stdout,
+@@ -56,10 +66,11 @@ enum UiOutput {
+         child: Child,
+         child_stdin: ChildStdin,
+     },
++    #[cfg_attr(not(windows), allow(dead_code))]
+     BuiltinPaged {
+         out_wr: PipeWriter,
+         err_wr: PipeWriter,
+-        pager_thread: JoinHandle<streampager::Result<()>>,
++        pager_thread: JoinHandle<BuiltinPagerResult>,
+     },
+     Null,
+ }
+@@ -80,6 +91,7 @@ impl UiOutput {
+         Ok(Self::Paged { child, child_stdin })
+     }
+ 
++    #[cfg(windows)]
+     fn new_builtin_paged(config: &StreampagerConfig) -> streampager::Result<Self> {
+         let streampager_config = streampager::config::Config {
+             wrapping_mode: config.wrapping.into(),
+@@ -286,6 +298,7 @@ enum StreampagerWrappingMode {
+     Anywhere,
+ }
+ 
++#[cfg(windows)]
+ impl From<StreampagerWrappingMode> for streampager::config::WrappingMode {
+     fn from(val: StreampagerWrappingMode) -> Self {
+         match val {
+@@ -298,6 +311,8 @@ impl From<StreampagerWrappingMode> for streampager::config::WrappingMode {
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Deserialize)]
+ #[serde(rename_all(deserialize = "kebab-case"))]
++// This config is only used on Windows.
++#[cfg_attr(not(windows), allow(dead_code))]
+ struct StreampagerConfig {
+     interface: StreampagerAlternateScreenMode,
+     wrapping: StreampagerWrappingMode,
+@@ -307,6 +322,7 @@ struct StreampagerConfig {
+     // of this writing, floating point numbers do not work with `--config`
+ }
+ 
++#[cfg(windows)]
+ impl StreampagerConfig {
+     fn streampager_interface_mode(&self) -> streampager::config::InterfaceMode {
+         use StreampagerAlternateScreenMode::*;
+@@ -322,7 +338,7 @@ impl StreampagerConfig {
+ 
+ enum PagerConfig {
+     Disabled,
+-    Builtin(StreampagerConfig),
++    Builtin(#[cfg_attr(not(windows), allow(dead_code))] StreampagerConfig),
+     External(CommandNameAndArgs),
+ }
+ 
+@@ -381,6 +397,17 @@ impl Ui {
+             PagerConfig::Disabled => {
+                 return;
+             }
++            #[cfg(not(windows))]
++            PagerConfig::Builtin(_) => {
++                writeln!(
++                    self.warning_default(),
++                    "The `{BUILTIN_PAGER_NAME}` pager is only available on Windows; output \
++                     will not be paginated."
++                )
++                .ok();
++                None
++            }
++            #[cfg(windows)]
+             PagerConfig::Builtin(streampager_config) => {
+                 UiOutput::new_builtin_paged(streampager_config)
+                     .inspect_err(|err| {
+@@ -404,7 +431,13 @@ impl Ui {
+                             err = format_error_with_sources(err),
+                         )
+                         .ok();
+-                        writeln!(self.hint_default(), "Consider using the `:builtin` pager.").ok();
++                        if cfg!(windows) {
++                            writeln!(
++                                self.hint_default(),
++                                "Consider using the `{BUILTIN_PAGER_NAME}` pager."
++                            )
++                            .ok();
++                        }
+                     })
+                     .ok()
+             }

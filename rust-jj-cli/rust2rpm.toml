@@ -1,0 +1,29 @@
+[package]
+cargo-toml-patch-comments = [
+    "drop the sapling-streampager dependency, only used by the builtin pager",
+    "bump sapling-renderdag from 0.1 to 0.3",
+    "drop the crossterm windows feature which uses Windows-only dependencies",
+    "drop watchman from the default features as watchman isn't packaged on Fedora",
+    "drop the bench feature and the criterion dependency",
+]
+
+[[package.extra-patches]]
+number = 2
+file = "jj-cli-builtin-pager-windows-only.patch"
+comments = ["make the builtin pager Windows-only so the termwiz stack isn't needed"]
+
+[[package.extra-patches]]
+number = 3
+file = "jj-cli-renderdag-0.3-debug-bound.patch"
+comments = [
+    "add the Debug bound that sapling-renderdag >= 0.2 requires",
+    "backported from upstream commit 4b659baa60b8",
+]
+
+[features]
+# Watchman isn't packaged in Fedora
+hide = ["watchman"]
+
+[tests]
+run = false
+comments = ["tests require the unpublished testutils crate"]

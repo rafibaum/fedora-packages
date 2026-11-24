@@ -1,0 +1,12 @@
+diff --git a/src/graph.rs b/src/graph.rs
+index 03d778ea57..00ec59d949 100644
+--- a/src/graph.rs
++++ b/src/graph.rs
+@@ -462,6 +462,7 @@ fn test_format_graph() {
+         insta::assert_snapshot!(format_graph(graph), @"
+         D    direct(C), indirect(B)
+         ├─╮
++        │ ╷
+         C ╷  direct(A)
+         │ ╷
+         │ B  missing(X)

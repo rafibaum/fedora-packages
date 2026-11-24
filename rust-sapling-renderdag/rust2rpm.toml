@@ -1,4 +1,0 @@
-[package]
-cargo-toml-patch-comments = [
-    "bump sapling-renderdag from 0.2 to 0.3 (API used by jj is unchanged)",
-]

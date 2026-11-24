@@ -1,0 +1,4 @@
+[package]
+cargo-toml-patch-comments = [
+    "drop the benchmark targets and the criterion dev dependency",
+]

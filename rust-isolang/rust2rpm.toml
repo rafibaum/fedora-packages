@@ -1,0 +1,8 @@
+[tests]
+skip = ["generated_code_table_if_outdated"]
+skip-exact = true
+comments = ["test that checks that upstream remembered to run rustfmt, which breaks in our build environment since we don't install it"]
+
+[features]
+# async-graphql isn't packaged in Fedora
+hide = ["async-graphql"]

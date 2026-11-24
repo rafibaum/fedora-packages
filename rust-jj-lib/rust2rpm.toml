@@ -1,0 +1,22 @@
+[package]
+cargo-toml-patch-comments = [
+    "drop the benchmark targets and the criterion dev dependency",
+    "bump the sapling-renderdag dev dependency from 0.1 to 0.3",
+    "enable the gix tree-editor feature for tests which upstream enables through the unpublished testutils crate",
+]
+
+[[package.extra-patches]]
+number = 2
+file = "jj-lib-renderdag-0.3-test-snapshot.patch"
+comments = [
+    "update the test_format_graph snapshot for sapling-renderdag >= 0.2",
+    "backported from upstream commit 4b659baa60b8",
+]
+
+[tests]
+run = ["lib"]
+comments = ["integration tests require the unpublished testutils crate"]
+
+[features]
+# Watchman isn't packaged in Fedora
+hide = ["watchman"]
